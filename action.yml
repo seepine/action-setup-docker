@@ -1,0 +1,132 @@
+name: 'action-setup-docker'
+description: 'Setup docker and login'
+branding:
+  icon: package
+  color: orange
+
+inputs:
+  registry:
+    description: 'Server address of Docker registry. If not set then will default to Docker Hub'
+    required: false
+  username:
+    description: 'Username used to log against the Docker registry'
+    required: false
+  password:
+    description: 'Password or personal access token used to log against the Docker registry'
+    required: false
+  cache:
+    description: 'Enable cache'
+    required: true
+outputs:
+  version:
+    description: 'Repo tag name or ref'
+    value: ${{ steps.meta.outputs.version }}
+  tags:
+    description: 'Autogen image tags'
+    value: ${{ steps.meta.outputs.tags }}
+  cache-path:
+    description: 'Cache path'
+    value: ${{ steps.meta.outputs.cache-path }}
+  cache-to:
+    description: 'Cache to'
+    value: ${{ steps.meta.outputs.cache-to }}
+  cache-from:
+    description: 'Cache from'
+    value: ${{ steps.meta.outputs.cache-from }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Proxy env
+      shell: bash
+      run: |
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] ⚙️ Set up Proxy env"
+        if [ -n "${{ env.HTTP_PROXY }}" ]; then
+          echo "http_proxy=${{ env.HTTP_PROXY }}" >> $GITHUB_ENV
+        fi
+        if [ -n "${{ env.HTTPS_PROXY }}" ]; then
+          echo "https_proxy=${{ env.HTTPS_PROXY }}" >> $GITHUB_ENV
+        fi
+        if [ -n "${{ env.NO_PROXY }}" ]; then
+          echo "no_proxy=${{ env.NO_PROXY }}" >> $GITHUB_ENV
+        fi
+        echo "  http_proxy=${{ env.http_proxy }}"
+        echo "  https_proxy=${{ env.https_proxy }}"
+        echo "  no_proxy=${{ env.no_proxy }}"                
+
+    - name: echo Set up QEMU
+      shell: bash
+      run: echo -e "\n[$(date +'%Y-%m-%d %H:%M:%S')] ⚙️ Set up QEMU"
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: echo Set up Docker BuildX
+      shell: bash
+      run: echo -e "\n[$(date +'%Y-%m-%d %H:%M:%S')] ⚙️ Set up Docker BuildX"
+
+    - name: Set up Docker BuildX
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver-opts: |
+          env.http_proxy=${{ env.http_proxy }}
+          env.https_proxy=${{ env.https_proxy }}
+          "env.no_proxy='${{ env.no_proxy }}'"                    
+
+    - name: echo Login to DockerHub
+      shell: bash
+      run: echo -e "\n[$(date +'%Y-%m-%d %H:%M:%S')] ⚙️ Login to DockerHub"
+      if: ${{ inputs.password != '' }}
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      if: ${{ inputs.password != '' }}
+      with:
+        registry: ${{ inputs.registry }} # docker.io
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+      env:
+        HTTP_PROXY: ${{ env.http_proxy }}
+        HTTPS_PROXY: ${{ env.https_proxy }}
+        NO_PROXY: ${{ env.no_proxy }}
+
+    - name: echo Cache docker build
+      shell: bash
+      run: echo -e "\n[$(date +'%Y-%m-%d %H:%M:%S')] ⚙️ Cache docker build"
+
+    - name: Cache docker build
+      uses: actions/cache@v4
+      with:
+        path: /opt/docker-cache/.build-cache
+        key: ${{ runner.os }}-docker-build-cache
+
+    - name: Get docker meta
+      id: meta
+      shell: bash
+      run: |
+        REPO_NAME=$(echo ${GITHUB_REPOSITORY} | awk -F"/" '{print $2}')
+        REPO_VERSION=$(echo ${{ github.ref }} | awk -F"/" '{print $3}' | awk -F"v" '{print (NF>1) ? $2 : $1}')
+
+        echo "cache-path='/opt/docker-cache/.build-cache'" >> $GITHUB_OUTPUT
+        echo "cache-to='type=local,src=/opt/docker-cache/.build-cache'" >> $GITHUB_OUTPUT
+        echo "cache-from='type=local,dest=/opt/docker-cache/.build-cache,mode=max'" >> $GITHUB_OUTPUT
+
+        if [ -n "${{ inputs.registry }}" ]; then
+          TAGS="${{ inputs.registry }}/${{ inputs.username }}/$REPO_NAME:latest"
+          TAGS="$TAGS,${{ inputs.registry }}/${{ inputs.username }}/$REPO_NAME:$REPO_VERSION"
+        else
+          TAGS="${{ inputs.username }}/$REPO_NAME:latest"
+          TAGS="$TAGS,${{ inputs.username }}/$REPO_NAME:$REPO_VERSION"
+        fi
+
+        echo "version=$REPO_VERSION" >> $GITHUB_OUTPUT
+        echo "tags=$TAGS" >> $GITHUB_OUTPUT        
+
+    - name: Output
+      shell: bash
+      run: |
+        echo -e "\n[$(date +'%Y-%m-%d %H:%M:%S')] ⚙️ Outputs"
+        echo version=${{ steps.meta.outputs.version }}
+        echo tags=${{ steps.meta.outputs.tags }}
+        echo cache-path=${{ steps.meta.outputs.cache-path }}
+        echo cache-to=${{ steps.meta.outputs.cache-to }}
+        echo cache-from=${{ steps.meta.outputs.cache-from }}        
