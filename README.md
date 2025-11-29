@@ -11,7 +11,7 @@
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.DOCKER_PASSWORD }} # if has password, it will run docker login
+          password: ${{ secrets.GITHUB_TOKEN }} # if has password, it will run docker login
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -40,13 +40,14 @@ The tags auto generate from `refs`.Eg the repo is `github.com/seepine/demo`, wit
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.DOCKER_PASSWORD }} # if has password, it will run docker login
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
           push: true
+          # you can set any tags
           tags: |
             docker.io/zhangsan/demo:latest
             docker.io/zhangsan/demo:1.2.3
@@ -63,16 +64,16 @@ The tags auto generate from `refs`.Eg the repo is `github.com/seepine/demo`, wit
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.DOCKER_PASSWORD }} # if has password, it will run docker login
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          cache-from: ${{ steps.meta.outputs.cache-from }}
-          cache-to: ${{ steps.meta.outputs.cache-to }}
           tags: ${{ steps.meta.outputs.tags }}
+          cache-to: ${{ steps.meta.outputs.cache-to }}
+          cache-from: ${{ steps.meta.outputs.cache-from }}
 ```
 
 ## Set proxy
@@ -100,7 +101,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.DOCKER_PASSWORD }} # if has password, it will run docker login
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
