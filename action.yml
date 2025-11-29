@@ -14,9 +14,6 @@ inputs:
   password:
     description: 'Password or personal access token used to log against the Docker registry'
     required: false
-  cache:
-    description: 'Enable cache'
-    required: true
 outputs:
   version:
     description: 'Repo tag name or ref'
