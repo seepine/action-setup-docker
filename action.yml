@@ -108,9 +108,9 @@ runs:
         REPO_NAME=$(echo ${GITHUB_REPOSITORY} | awk -F"/" '{print $2}')
         REPO_VERSION=$(echo ${{ github.ref }} | awk -F"/" '{print $3}' | awk -F"v" '{print (NF>1) ? $2 : $1}')
 
-        echo "cache-path='/opt/docker-cache/.build-cache'" >> $GITHUB_OUTPUT
-        echo "cache-to='type=local,dest=/opt/docker-cache/.build-cache'" >> $GITHUB_OUTPUT
-        echo "cache-from='type=local,src=/opt/docker-cache/.build-cache'" >> $GITHUB_OUTPUT
+        echo "cache-path=/opt/docker-cache/.build-cache" >> $GITHUB_OUTPUT
+        echo "cache-to=type=local,dest=/opt/docker-cache/.build-cache" >> $GITHUB_OUTPUT
+        echo "cache-from=type=local,src=/opt/docker-cache/.build-cache" >> $GITHUB_OUTPUT
 
         if [ -n "${{ inputs.registry }}" ]; then
           TAGS="${{ inputs.registry }}/${{ inputs.username }}/$REPO_NAME:latest"
