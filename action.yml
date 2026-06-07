@@ -15,12 +15,18 @@ inputs:
     description: 'Password or personal access token used to log against the Docker registry'
     required: false
 outputs:
-  version:
-    description: 'Repo tag name or ref'
-    value: ${{ steps.meta.outputs.version }}
   tags:
     description: 'Autogen image tags'
     value: ${{ steps.meta.outputs.tags }}
+  version:
+    description: 'Repo tag name or ref'
+    value: ${{ steps.meta.outputs.version }}
+  name:
+    description: 'Repo name'
+    value: ${{ steps.meta.outputs.version }}
+  image:
+    description: 'Autogen image without version'
+    value: ${{ steps.meta.outputs.image }}
   cache-path:
     description: 'Cache path'
     value: ${{ steps.meta.outputs.cache-path }}
@@ -113,21 +119,25 @@ runs:
         echo "cache-from=type=local,src=/opt/docker-cache/.build-cache" >> $GITHUB_OUTPUT
 
         if [ -n "${{ inputs.registry }}" ]; then
-          TAGS="${{ inputs.registry }}/${{ inputs.username }}/$REPO_NAME:latest"
-          TAGS="$TAGS,${{ inputs.registry }}/${{ inputs.username }}/$REPO_NAME:$REPO_VERSION"
+          IMAGE="${{ inputs.registry }}/${{ inputs.username }}/$REPO_NAME"
         else
-          TAGS="${{ inputs.username }}/$REPO_NAME:latest"
-          TAGS="$TAGS,${{ inputs.username }}/$REPO_NAME:$REPO_VERSION"
+          IMAGE="${{ inputs.username }}/$REPO_NAME"
         fi
 
+        TAGS="$IMAGE:latest,$IMAGE:$REPO_VERSION"
+
+        echo "name=$REPO_NAME" >> $GITHUB_OUTPUT
         echo "version=$REPO_VERSION" >> $GITHUB_OUTPUT
+        echo "image=$IMAGE" >> $GITHUB_OUTPUT
         echo "tags=$TAGS" >> $GITHUB_OUTPUT        
 
     - name: Output
       shell: bash
       run: |
         echo -e "\n[$(date +'%Y-%m-%d %H:%M:%S')] ⚙️ Outputs"
+        echo name=${{ steps.meta.outputs.name }}
         echo version=${{ steps.meta.outputs.version }}
+        echo image=${{ steps.meta.outputs.image }}
         echo tags=${{ steps.meta.outputs.tags }}
         echo cache-path=${{ steps.meta.outputs.cache-path }}
         echo cache-to=${{ steps.meta.outputs.cache-to }}

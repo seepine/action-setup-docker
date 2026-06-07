@@ -52,7 +52,8 @@ The tags auto generate from `refs`.Eg the repo is `github.com/seepine/demo`, wit
             docker.io/zhangsan/demo:latest
             docker.io/zhangsan/demo:1.2.3
             ghcr.io/${{ github.actor }}/demo:latest
-
+            ghcr.io/${{ github.actor }}/${{ steps.meta.outputs.name }}:1.2.3
+            ${{ steps.meta.outputs.image }}:1.2.3
 ```
 
 ## Set Cache
